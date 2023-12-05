@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: ".env.local" });
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -9,12 +9,15 @@ const cors = require("cors");
 app.use(cors());
 app.use(express.json());
 
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.q66zrl2.mongodb.net/?retryWrites=true&w=majority`;
+const uri = `mongodb+srv://jobbox:86pwMOQl1RkZ5D8j@cluster0.i4cqwjk.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverApi: ServerApiVersion.v1,
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
 });
+console.log(uri);
 
 const run = async () => {
   try {
@@ -24,22 +27,19 @@ const run = async () => {
 
     app.post("/user", async (req, res) => {
       const user = req.body;
-
       const result = await userCollection.insertOne(user);
-
       res.send(result);
     });
 
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
-
+      console.log(email);
       const result = await userCollection.findOne({ email });
-
       if (result?.email) {
         return res.send({ status: true, data: result });
       }
 
-      res.send({ status: false });
+      res.send({ status: false, data: { email: email, role: "" } });
     });
 
     app.patch("/apply", async (req, res) => {
@@ -134,23 +134,25 @@ const run = async () => {
 
     app.get("/job/:id", async (req, res) => {
       const id = req.params.id;
-
+      console.log(id);
       const result = await jobCollection.findOne({ _id: ObjectId(id) });
       res.send({ status: true, data: result });
     });
 
     app.post("/job", async (req, res) => {
       const job = req.body;
-
+      console.log(job);
       const result = await jobCollection.insertOne(job);
-
       res.send({ status: true, data: result });
     });
   } finally {
   }
 };
 
-run().catch((err) => console.log(err));
+run().catch((err) => {
+  console.error(err);
+  res.status(500).send("Internal Server Error");
+});
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
